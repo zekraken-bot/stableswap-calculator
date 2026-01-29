@@ -77,6 +77,18 @@ function calculateY(x: number, D: number, A: number): number {
   return Number(y) / scale;
 }
 
+// Calculate spot price (how much B you get for 1 unit of A) at a given balance state
+function calculateSpotPrice(balanceA: number, balanceB: number, D: number, A: number): number {
+  // Do a small swap (1 unit of A) to calculate the marginal exchange rate
+  const smallSwapAmount = 1;
+  const newBalanceA = balanceA + smallSwapAmount;
+  const newBalanceB = calculateY(newBalanceA, D, A);
+  const amountBOut = balanceB - newBalanceB;
+
+  // Spot price = how much B we get for 1 A
+  return amountBOut / smallSwapAmount;
+}
+
 export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) => {
   const selectedPoints = 200; // Fixed at 200 points for smooth curves
   const [hoveredCurve, setHoveredCurve] = useState<number | null>(null);
@@ -326,10 +338,26 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
 
         {/* Hover indicator and tooltip */}
         {hoverPoint && hoveredCurve !== null && (() => {
-          const tooltipWidth = 140;
-          const tooltipHeight = 55;
+          const tooltipWidth = 160;
+          const tooltipHeight = 70;
           const pointX = scaleX(hoverPoint.x);
           const pointY = scaleY(hoverPoint.y);
+
+          // Calculate price impact
+          const hoveredA = curves[hoveredCurve].A;
+          const currentSpotPrice = calculateSpotPrice(
+            poolState.balanceA,
+            poolState.balanceB,
+            currentD,
+            poolState.amplificationFactor
+          );
+          const hoverSpotPrice = calculateSpotPrice(
+            hoverPoint.x,
+            hoverPoint.y,
+            currentD,
+            hoveredA
+          );
+          const priceImpact = ((hoverSpotPrice - currentSpotPrice) / currentSpotPrice) * 100;
 
           // Position tooltip to the right by default, but flip left if too close to right edge
           const tooltipX = pointX + 15 + tooltipWidth > width - padding
@@ -337,9 +365,9 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
             : pointX + 15;
 
           // Position tooltip above the point, but flip below if too close to top edge
-          const tooltipY = pointY - 60 < padding
+          const tooltipY = pointY - 75 < padding
             ? pointY + 15
-            : pointY - 60;
+            : pointY - 75;
 
           const textX = tooltipX + 10;
           const textYBase = tooltipY + 20;
@@ -393,6 +421,15 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
                 fontSize="11"
               >
                 Token B: {hoverPoint.y.toFixed(2)}
+              </text>
+              <text
+                x={textX}
+                y={textYBase + 45}
+                fill={priceImpact >= 0 ? "#4ade80" : "#f87171"}
+                fontSize="11"
+                fontWeight="bold"
+              >
+                Impact: {priceImpact >= 0 ? '+' : ''}{priceImpact.toFixed(3)}%
               </text>
             </>
           );

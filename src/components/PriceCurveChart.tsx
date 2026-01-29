@@ -348,15 +348,9 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
           const pointY = scaleY(hoverPoint.y);
 
           // Calculate price impact (including swap fee)
+          // Compare to expected 1:1 ratio like the bar charts do
           const hoveredA = curves[hoveredCurve].A;
           const feeDecimal = poolState.swapFee / 100; // Convert percentage to decimal
-          const currentSpotPrice = calculateSpotPrice(
-            poolState.balanceA,
-            poolState.balanceB,
-            currentD,
-            poolState.amplificationFactor,
-            feeDecimal
-          );
           const hoverSpotPrice = calculateSpotPrice(
             hoverPoint.x,
             hoverPoint.y,
@@ -364,7 +358,8 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
             hoveredA,
             feeDecimal
           );
-          const priceImpact = ((hoverSpotPrice - currentSpotPrice) / currentSpotPrice) * 100;
+          const expectedPrice = 1; // Expected 1:1 exchange rate for stablecoins
+          const priceImpact = ((hoverSpotPrice - expectedPrice) / expectedPrice) * 100;
 
           // Position tooltip to the right by default, but flip left if too close to right edge
           const tooltipX = pointX + 15 + tooltipWidth > width - padding

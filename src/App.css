@@ -292,7 +292,7 @@
 .chart-subtitle {
   color: #666;
   font-size: 0.9rem;
-  margin-bottom: 1rem;
+  margin-bottom: 5rem;
 }
 
 .chart-container {
@@ -396,6 +396,10 @@
   color: #667eea;
   margin-bottom: 0.5rem;
   font-size: 1.3rem;
+}
+
+.price-curve-chart .chart-subtitle {
+  margin-bottom: 0;
 }
 
 .curve-controls {

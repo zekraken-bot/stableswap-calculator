@@ -78,15 +78,19 @@ function calculateY(x: number, D: number, A: number): number {
 }
 
 // Calculate spot price (how much B you get for 1 unit of A) at a given balance state
-function calculateSpotPrice(balanceA: number, balanceB: number, D: number, A: number): number {
+function calculateSpotPrice(balanceA: number, balanceB: number, D: number, A: number, fee: number): number {
   // Do a small swap (1 unit of A) to calculate the marginal exchange rate
   const smallSwapAmount = 1;
   const newBalanceA = balanceA + smallSwapAmount;
   const newBalanceB = calculateY(newBalanceA, D, A);
   const amountBOut = balanceB - newBalanceB;
 
-  // Spot price = how much B we get for 1 A
-  return amountBOut / smallSwapAmount;
+  // Apply swap fee to output (matching the bar chart calculation)
+  const feeMultiplier = 1 - fee;
+  const amountBOutAfterFee = amountBOut * feeMultiplier;
+
+  // Spot price = how much B we get for 1 A (after fees)
+  return amountBOutAfterFee / smallSwapAmount;
 }
 
 export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) => {
@@ -343,19 +347,22 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
           const pointX = scaleX(hoverPoint.x);
           const pointY = scaleY(hoverPoint.y);
 
-          // Calculate price impact
+          // Calculate price impact (including swap fee)
           const hoveredA = curves[hoveredCurve].A;
+          const feeDecimal = poolState.swapFee / 100; // Convert percentage to decimal
           const currentSpotPrice = calculateSpotPrice(
             poolState.balanceA,
             poolState.balanceB,
             currentD,
-            poolState.amplificationFactor
+            poolState.amplificationFactor,
+            feeDecimal
           );
           const hoverSpotPrice = calculateSpotPrice(
             hoverPoint.x,
             hoverPoint.y,
             currentD,
-            hoveredA
+            hoveredA,
+            feeDecimal
           );
           const priceImpact = ((hoverSpotPrice - currentSpotPrice) / currentSpotPrice) * 100;
 

@@ -120,10 +120,10 @@ export const PriceImpactChart: React.FC<PriceImpactChartProps> = ({
               </div>
               <div className="chart-label">{impact.label}</div>
               <div className="chart-details">
-                <div>Swap: {swapAmount.toFixed(2)}</div>
-                <div>Get: {amountOut.toFixed(4)}</div>
-                <div>A: {newBalanceA.toFixed(4)} ({percentageA.toFixed(2)}%)</div>
-                <div>B: {newBalanceB.toFixed(4)} ({percentageB.toFixed(2)}%)</div>
+                <div>In: {swapAmount.toFixed(4)}</div>
+                <div>Out: {amountOut.toFixed(4)}</div>
+                <div>A: {newBalanceA.toFixed(2)} ({percentageA.toFixed(2)}%)</div>
+                <div>B: {newBalanceB.toFixed(2)} ({percentageB.toFixed(2)}%)</div>
               </div>
             </div>
           );

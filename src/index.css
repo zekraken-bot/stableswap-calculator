@@ -30,9 +30,9 @@ body {
 
 #root {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1800px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
 }
 
 h1,

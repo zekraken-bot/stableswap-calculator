@@ -125,10 +125,10 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
   );
   console.log("Current pool invariant D:", currentD, "for A:", poolState.amplificationFactor);
 
-  // Chart dimensions
-  const width = 800;
-  const height = 600;
-  const padding = 60;
+  // Chart dimensions - using viewBox for responsiveness
+  const width = 500;
+  const height = 400;
+  const padding = 50;
   const chartWidth = width - 2 * padding;
   const chartHeight = height - 2 * padding;
 
@@ -179,8 +179,14 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const svg = e.currentTarget;
     const rect = svg.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+
+    // Get mouse position relative to the SVG element
+    const mouseXPixels = e.clientX - rect.left;
+    const mouseYPixels = e.clientY - rect.top;
+
+    // Convert from rendered pixels to viewBox coordinates
+    const mouseX = (mouseXPixels / rect.width) * width;
+    const mouseY = (mouseYPixels / rect.height) * height;
 
     // Find the closest curve and point (only consider visible curves)
     let closestCurveIdx = -1;
@@ -226,8 +232,7 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
       </p>
 
       <svg
-        width={width}
-        height={height}
+        viewBox={`0 0 ${width} ${height}`}
         className="curve-svg"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}

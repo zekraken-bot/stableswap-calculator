@@ -103,12 +103,14 @@ function App() {
           <PoolParameters poolState={poolState} onPoolStateChange={setPoolState} />
         </div>
 
-        <div className="card">
-          <PriceImpactChart poolState={poolState} direction={direction} />
-        </div>
+        <div className="charts-row">
+          <div className="card">
+            <PriceImpactChart poolState={poolState} direction={direction} />
+          </div>
 
-        <div className="card">
-          <PriceCurveChart poolState={poolState} />
+          <div className="card">
+            <PriceCurveChart poolState={poolState} />
+          </div>
         </div>
 
         <div className="toggle-section">

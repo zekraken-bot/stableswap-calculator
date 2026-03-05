@@ -139,13 +139,17 @@ function _computeOutGivenExactIn(
 /**
  * Calculate the output amount for a swap
  * Matches the pattern from working Balancer V3 implementation
+ * Rates scale the balances: rateAdjustedBalance = balance * rate
+ * Output is converted back: actualAmountOut = rateAdjustedAmountOut / rateOut
  */
 export function getSwapAmount(
   amountIn: number,
   balanceIn: number,
   balanceOut: number,
   A: number,
-  fee: number
+  fee: number,
+  rateIn: number = 1,
+  rateOut: number = 1
 ): number {
   if (amountIn <= 0) {
     return 0;
@@ -155,34 +159,33 @@ export function getSwapAmount(
     throw new Error('Pool balances must be greater than 0');
   }
 
+  const effectiveRateIn = rateIn > 0 ? rateIn : 1;
+  const effectiveRateOut = rateOut > 0 ? rateOut : 1;
+
+  // Matches Balancer V3 Vault swap flow:
+  // 1. Balances: raw * rate = live balances (rate-adjusted)
+  // 2. amountIn: raw * rate = scaled amount (enters live-balance space)
+  // 3. amountOut: math result / rate = raw tokens out
+  const rateAdjustedBalanceIn = balanceIn * effectiveRateIn;
+  const rateAdjustedBalanceOut = balanceOut * effectiveRateOut;
+  const rateAdjustedAmountIn = amountIn * effectiveRateIn;
+
   // Scale to 18 decimals using BigNumber to avoid floating point errors
   const SCALE_18 = new BigNumber(10).pow(18);
 
-  // Convert to BigNumber, multiply, then convert to bigint
-  const amountInScaled18 = BigInt(new BigNumber(amountIn).times(SCALE_18).toFixed(0));
-  const balanceInScaled18 = BigInt(new BigNumber(balanceIn).times(SCALE_18).toFixed(0));
-  const balanceOutScaled18 = BigInt(new BigNumber(balanceOut).times(SCALE_18).toFixed(0));
+  const amountInScaled18 = BigInt(new BigNumber(rateAdjustedAmountIn).times(SCALE_18).toFixed(0));
+  const balanceInScaled18 = BigInt(new BigNumber(rateAdjustedBalanceIn).times(SCALE_18).toFixed(0));
+  const balanceOutScaled18 = BigInt(new BigNumber(rateAdjustedBalanceOut).times(SCALE_18).toFixed(0));
 
   // A must be multiplied by AMP_PRECISION (1000)
   const amplificationParameter = BigInt(A) * AMP_PRECISION;
 
-  // Create balances array with scaled values
   const balances = [balanceInScaled18, balanceOutScaled18];
-
-  console.log('=== Swap Calculation Debug (Working Implementation) ===');
-  console.log('Input:', { amountIn, balanceIn, balanceOut, A, fee });
-  console.log('Scaled values:', {
-    amountInScaled18: amountInScaled18.toString(),
-    balanceInScaled18: balanceInScaled18.toString(),
-    balanceOutScaled18: balanceOutScaled18.toString(),
-  });
-  console.log('Amplification parameter (A * 1000):', amplificationParameter.toString());
 
   // Calculate invariant D before swap
   const invariant = _computeInvariant(amplificationParameter, balances);
-  console.log('Invariant D:', invariant.toString());
 
-  // Calculate output amount using the exact working function
+  // Calculate output amount in rate-adjusted space
   const amountOutScaled18 = _computeOutGivenExactIn(
     amplificationParameter,
     balances,
@@ -191,19 +194,15 @@ export function getSwapAmount(
     amountInScaled18,
     invariant
   );
-  console.log('Amount out (scaled):', amountOutScaled18.toString());
 
-  // Scale back to normal decimals
-  const amountOutBeforeFee = Number(amountOutScaled18) / Number(SCALE_18);
-  console.log('Amount out (unscaled, before fee):', amountOutBeforeFee);
+  // Scale back to normal decimals (still in rate-adjusted space)
+  const rateAdjustedAmountOut = Number(amountOutScaled18) / Number(SCALE_18);
 
-  // Apply swap fee to output (matching Balancer's pattern)
-  const feeMultiplier = 1 - fee;
-  const amountOutAfterFee = amountOutBeforeFee * feeMultiplier;
+  // Convert from rate-adjusted back to actual token B amount
+  const amountOutBeforeFee = rateAdjustedAmountOut / effectiveRateOut;
 
-  console.log('Fee multiplier:', feeMultiplier);
-  console.log('Amount out (after fee):', amountOutAfterFee);
-  console.log('Effective price:', amountOutAfterFee / amountIn);
+  // Apply swap fee
+  const amountOutAfterFee = amountOutBeforeFee * (1 - fee);
 
   return amountOutAfterFee > 0 ? amountOutAfterFee : 0;
 }

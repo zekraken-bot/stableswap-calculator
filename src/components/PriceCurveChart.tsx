@@ -116,12 +116,16 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
     });
   };
 
+  // Use live (rate-adjusted) balances — this is the space the stableswap math operates in
+  const liveBalanceA = poolState.balanceA * poolState.rateA;
+  const liveBalanceB = poolState.balanceB * poolState.rateB;
+
   // Calculate invariant D using the CURRENT pool's A value
   // Then show how different A values create different curves with this same D
   const currentD = calculateInvariant(
     poolState.amplificationFactor,
-    poolState.balanceA,
-    poolState.balanceB,
+    liveBalanceA,
+    liveBalanceB,
   );
   console.log("Current pool invariant D:", currentD, "for A:", poolState.amplificationFactor);
 
@@ -132,8 +136,8 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
   const chartWidth = width - 2 * padding;
   const chartHeight = height - 2 * padding;
 
-  // Calculate the total liquidity for scaling
-  const totalLiquidity = poolState.balanceA + poolState.balanceB;
+  // Calculate the total liquidity for scaling (in live balance space)
+  const totalLiquidity = liveBalanceA + liveBalanceB;
   const maxVal = totalLiquidity * 1.5; // Increased range to show more separation
 
   // Generate curve data for each A value using the SAME D (current pool's D)
@@ -171,9 +175,9 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
   const scaleX = (x: number) => padding + (x / maxVal) * chartWidth;
   const scaleY = (y: number) => height - padding - (y / maxVal) * chartHeight;
 
-  // Current pool position
-  const currentX = scaleX(poolState.balanceA);
-  const currentY = scaleY(poolState.balanceB);
+  // Current pool position (in live balance space)
+  const currentX = scaleX(liveBalanceA);
+  const currentY = scaleY(liveBalanceB);
 
   // Handle mouse move over SVG to find closest curve point
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {

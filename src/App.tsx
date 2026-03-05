@@ -18,11 +18,14 @@ function App() {
     balanceB: 100,
     amplificationFactor: 100,
     swapFee: 0.05,
+    rateA: 1,
+    rateB: 1,
   });
 
   const [direction, setDirection] = useState<SwapDirection>('AtoB');
   const [amountIn, setAmountIn] = useState<number>(0);
   const [showSwapSection, setShowSwapSection] = useState<boolean>(false);
+  const [showUnderlyingPrice, setShowUnderlyingPrice] = useState<boolean>(false);
 
   const [swapState, setSwapState] = useState<SwapState>({
     direction: 'AtoB',
@@ -56,19 +59,31 @@ function App() {
       const feeDecimal = poolState.swapFee / 100;
 
       // Calculate output amount
-      const amountOut = getSwapAmount(
+      const rateIn = direction === 'AtoB' ? poolState.rateA : poolState.rateB;
+      const rateOut = direction === 'AtoB' ? poolState.rateB : poolState.rateA;
+
+      const rawAmountOut = getSwapAmount(
         amountIn,
         balanceIn,
         balanceOut,
         poolState.amplificationFactor,
-        feeDecimal
+        feeDecimal,
+        rateIn,
+        rateOut
       );
+
+      // Apply normalization if showing underlying (WETH) prices
+      const normalizationFactor = showUnderlyingPrice
+        ? (direction === 'AtoB' ? 1 / poolState.rateA : poolState.rateA)
+        : 1;
+
+      const amountOut = rawAmountOut * normalizationFactor;
 
       // Calculate effective price
       const effectivePrice = calculateEffectivePrice(amountIn, amountOut);
 
-      // Calculate price impact
-      const priceImpact = calculatePriceImpact(amountIn, amountOut);
+      // Price impact in live space: normalize both sides by rate so fair price = 1:1
+      const priceImpact = calculatePriceImpact(amountIn * rateIn, rawAmountOut * rateOut);
 
       setSwapState({
         direction,
@@ -87,7 +102,7 @@ function App() {
         priceImpact: 0,
       });
     }
-  }, [amountIn, direction, poolState]);
+  }, [amountIn, direction, poolState, showUnderlyingPrice]);
 
   return (
     <div className="app">
@@ -100,12 +115,21 @@ function App() {
 
       <main className="app-main">
         <div className="card">
-          <PoolParameters poolState={poolState} onPoolStateChange={setPoolState} />
+          <PoolParameters
+            poolState={poolState}
+            onPoolStateChange={setPoolState}
+            showUnderlyingPrice={showUnderlyingPrice}
+            onShowUnderlyingPriceChange={setShowUnderlyingPrice}
+          />
         </div>
 
         <div className="charts-row">
           <div className="card">
-            <PriceImpactChart poolState={poolState} direction={direction} />
+            <PriceImpactChart
+              poolState={poolState}
+              direction={direction}
+              showUnderlyingPrice={showUnderlyingPrice}
+            />
           </div>
 
           <div className="card">

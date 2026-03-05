@@ -5,16 +5,20 @@ import { getSwapAmount, calculatePriceImpact } from '../utils/stableswap';
 interface PriceImpactChartProps {
   poolState: PoolState;
   direction: SwapDirection;
+  showUnderlyingPrice: boolean;
 }
 
 export const PriceImpactChart: React.FC<PriceImpactChartProps> = ({
   poolState,
   direction,
+  showUnderlyingPrice,
 }) => {
-  // Calculate combined pool liquidity
-  const totalLiquidity = poolState.balanceA + poolState.balanceB;
+  // Use live (rate-adjusted) balances for liquidity scaling
+  const liveBalanceA = poolState.balanceA * poolState.rateA;
+  const liveBalanceB = poolState.balanceB * poolState.rateB;
+  const totalLiveLiquidity = liveBalanceA + liveBalanceB;
 
-  // Swap sizes as percentages of total liquidity
+  // Swap sizes as percentages of total live liquidity
   const swapSizes = [
     { label: '0.5%', percentage: 0.005 },
     { label: '1%', percentage: 0.01 },
@@ -26,21 +30,39 @@ export const PriceImpactChart: React.FC<PriceImpactChartProps> = ({
 
   // Calculate price impact for each swap size
   const calculateImpactForSize = (percentage: number) => {
-    const swapAmount = totalLiquidity * percentage;
     const balanceIn = direction === 'AtoB' ? poolState.balanceA : poolState.balanceB;
     const balanceOut = direction === 'AtoB' ? poolState.balanceB : poolState.balanceA;
+    const rateIn = direction === 'AtoB' ? poolState.rateA : poolState.rateB;
+    const rateOut = direction === 'AtoB' ? poolState.rateB : poolState.rateA;
     const feeDecimal = poolState.swapFee / 100;
 
+    // Swap size as a percentage of live liquidity, converted to raw input token units
+    const swapAmountLive = totalLiveLiquidity * percentage;
+    const swapAmount = swapAmountLive / rateIn;
+
     try {
-      const amountOut = getSwapAmount(
+      const rawAmountOut = getSwapAmount(
         swapAmount,
         balanceIn,
         balanceOut,
         poolState.amplificationFactor,
-        feeDecimal
+        feeDecimal,
+        rateIn,
+        rateOut
       );
 
-      const priceImpact = calculatePriceImpact(swapAmount, amountOut);
+      // Apply normalization if showing underlying (WETH) prices
+      const normalizationFactor = showUnderlyingPrice
+        ? (direction === 'AtoB' ? 1 / poolState.rateA : poolState.rateA)
+        : 1;
+
+      const amountOut = rawAmountOut * normalizationFactor;
+
+      // Price impact in live space: compare (amountOut * rateOut) vs (swapAmount * rateIn)
+      // This normalizes for the rate difference so fair price = 1:1 in live space
+      const liveAmountOut = amountOut * rateOut;
+      const liveAmountIn = swapAmount * rateIn;
+      const priceImpact = calculatePriceImpact(liveAmountIn, liveAmountOut);
 
       // Calculate new balances after swap
       const newBalanceIn = balanceIn + swapAmount;
@@ -90,7 +112,7 @@ export const PriceImpactChart: React.FC<PriceImpactChartProps> = ({
     <div className="price-impact-chart">
       <h3>Price Impact by Swap Size</h3>
       <p className="chart-subtitle">
-        Based on total pool liquidity: {totalLiquidity.toFixed(2)} tokens
+        Based on total live liquidity: {totalLiveLiquidity.toFixed(4)} (swap sizes are % of live pool value)
       </p>
 
       <div className="chart-container">

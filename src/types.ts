@@ -3,6 +3,8 @@ export interface PoolState {
   balanceB: number;
   amplificationFactor: number;
   swapFee: number; // as percentage, e.g., 0.3 for 0.3%
+  rateA: number; // rate provider rate for token A, default 1.0
+  rateB: number; // rate provider rate for token B, default 1.0
 }
 
 export interface SwapState {

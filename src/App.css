@@ -89,6 +89,18 @@
   gap: 1rem;
 }
 
+.token-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.live-balance {
+  font-size: 0.8rem;
+  color: var(--text-muted, #888);
+  padding: 0.25rem 0;
+}
+
 .input-group {
   display: flex;
   flex-direction: column;
@@ -317,7 +329,7 @@
   background: #f8f9fa;
   border-radius: 8px;
   margin-bottom: 1rem;
-  margin-top: 4.5rem;
+  margin-top: 6rem;
 }
 
 .chart-bar-wrapper {

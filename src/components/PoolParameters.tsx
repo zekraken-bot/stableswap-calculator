@@ -52,9 +52,7 @@ export const PoolParameters: React.FC<PoolParametersProps> = ({
             />
           </div>
           <div className="input-group">
-            <label htmlFor="rateA">
-              <span className="help-text">Rate provider rate, default 1.0</span>
-            </label>
+            <label htmlFor="rateA">Rate provider rate, default 1.0</label>
             <input
               id="rateA"
               type="number"
@@ -85,9 +83,7 @@ export const PoolParameters: React.FC<PoolParametersProps> = ({
             />
           </div>
           <div className="input-group">
-            <label htmlFor="rateB">
-              <span className="help-text">Rate provider rate, default 1.0</span>
-            </label>
+            <label htmlFor="rateB">Rate provider rate, default 1.0</label>
             <input
               id="rateB"
               type="number"

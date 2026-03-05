@@ -39,6 +39,7 @@ export const PoolParameters: React.FC<PoolParametersProps> = ({
       <div className="input-grid">
         <div className="token-input-group">
           <div className="input-group">
+            <span className="help-text">&nbsp;</span>
             <label htmlFor="balanceA">Token A Balance:</label>
             <input
               id="balanceA"
@@ -71,6 +72,7 @@ export const PoolParameters: React.FC<PoolParametersProps> = ({
 
         <div className="token-input-group">
           <div className="input-group">
+            <span className="help-text">&nbsp;</span>
             <label htmlFor="balanceB">Token B Balance:</label>
             <input
               id="balanceB"
@@ -102,10 +104,8 @@ export const PoolParameters: React.FC<PoolParametersProps> = ({
         </div>
 
         <div className="input-group">
-          <label htmlFor="amplificationFactor">
-            Amplification Factor (A):
-            <span className="help-text">Higher A = more stable pricing</span>
-          </label>
+          <span className="help-text">&nbsp;</span>
+          <label htmlFor="amplificationFactor">Amplification Factor (A):</label>
           <input
             id="amplificationFactor"
             type="number"
@@ -115,13 +115,12 @@ export const PoolParameters: React.FC<PoolParametersProps> = ({
             onChange={handleChange("amplificationFactor")}
             placeholder="e.g., 100"
           />
+          <span className="help-text">Higher A = more stable pricing</span>
         </div>
 
         <div className="input-group">
-          <label htmlFor="swapFee">
-            Swap Fee (%):
-            <span className="help-text">e.g., 0.05 for 0.05%</span>
-          </label>
+          <span className="help-text">&nbsp;</span>
+          <label htmlFor="swapFee">Swap Fee (%):</label>
           <input
             id="swapFee"
             type="number"
@@ -132,6 +131,7 @@ export const PoolParameters: React.FC<PoolParametersProps> = ({
             onChange={handleChange("swapFee")}
             placeholder="e.g., 0.05"
           />
+          <span className="help-text">e.g., 0.05 for 0.05%</span>
         </div>
       </div>
     </div>

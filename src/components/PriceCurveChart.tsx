@@ -78,7 +78,13 @@ function calculateY(x: number, D: number, A: number): number {
 }
 
 // Calculate spot price (how much B you get for 1 unit of A) at a given balance state
-function calculateSpotPrice(balanceA: number, balanceB: number, D: number, A: number, fee: number): number {
+function calculateSpotPrice(
+  balanceA: number,
+  balanceB: number,
+  D: number,
+  A: number,
+  fee: number,
+): number {
   // Do a small swap (1 unit of A) to calculate the marginal exchange rate
   const smallSwapAmount = 1;
   const newBalanceA = balanceA + smallSwapAmount;
@@ -103,13 +109,11 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
   const colors = ["#dc3545", "#fd7e14", "#ffc107", "#28a745", "#007bff"];
 
   // Track which curves are visible (all visible by default)
-  const [visibleCurves, setVisibleCurves] = useState<boolean[]>(
-    aValues.map(() => true)
-  );
+  const [visibleCurves, setVisibleCurves] = useState<boolean[]>(aValues.map(() => true));
 
   // Toggle curve visibility
   const toggleCurve = (index: number) => {
-    setVisibleCurves(prev => {
+    setVisibleCurves((prev) => {
       const newVisible = [...prev];
       newVisible[index] = !newVisible[index];
       return newVisible;
@@ -122,11 +126,7 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
 
   // Calculate invariant D using the CURRENT pool's A value
   // Then show how different A values create different curves with this same D
-  const currentD = calculateInvariant(
-    poolState.amplificationFactor,
-    liveBalanceA,
-    liveBalanceB,
-  );
+  const currentD = calculateInvariant(poolState.amplificationFactor, liveBalanceA, liveBalanceB);
   console.log("Current pool invariant D:", currentD, "for A:", poolState.amplificationFactor);
 
   // Chart dimensions - using viewBox for responsiveness
@@ -206,7 +206,8 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
         const py = scaleY(point.y);
         const distance = Math.sqrt((px - mouseX) ** 2 + (py - mouseY) ** 2);
 
-        if (distance < minDistance && distance < 50) { // 50px threshold
+        if (distance < minDistance && distance < 50) {
+          // 50px threshold
           minDistance = distance;
           closestCurveIdx = curveIdx;
           closestPoint = point;
@@ -232,7 +233,8 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
     <div className="price-curve-chart">
       <h3>Price Curves by Amplification Factor</h3>
       <p className="chart-subtitle">
-        Comparing bonding curves for different A values with constant invariant D (current pool shown as ●)
+        Comparing bonding curves for different A values with constant invariant D (current pool
+        shown as ●)
       </p>
 
       <svg
@@ -264,12 +266,12 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
           Token A Balance
         </text>
         <text
-          x={20}
+          x={10}
           y={height / 2}
           textAnchor="middle"
           fill="#333"
           fontSize="14"
-          transform={`rotate(-90, 20, ${height / 2})`}
+          transform={`rotate(-90, 10, ${height / 2})`}
         >
           Token B Balance
         </text>
@@ -350,110 +352,96 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
         <circle cx={currentX} cy={currentY} r="6" fill="#667eea" stroke="#fff" strokeWidth="2" />
 
         {/* Hover indicator and tooltip */}
-        {hoverPoint && hoveredCurve !== null && (() => {
-          const tooltipWidth = 160;
-          const tooltipHeight = 70;
-          const pointX = scaleX(hoverPoint.x);
-          const pointY = scaleY(hoverPoint.y);
+        {hoverPoint &&
+          hoveredCurve !== null &&
+          (() => {
+            const tooltipWidth = 160;
+            const tooltipHeight = 70;
+            const pointX = scaleX(hoverPoint.x);
+            const pointY = scaleY(hoverPoint.y);
 
-          // Calculate price impact (including swap fee)
-          // Compare to expected 1:1 ratio like the bar charts do
-          const hoveredA = curves[hoveredCurve].A;
-          const feeDecimal = poolState.swapFee / 100; // Convert percentage to decimal
-          const hoverSpotPrice = calculateSpotPrice(
-            hoverPoint.x,
-            hoverPoint.y,
-            currentD,
-            hoveredA,
-            feeDecimal
-          );
-          const expectedPrice = 1; // Expected 1:1 exchange rate for stablecoins
-          const priceImpact = ((hoverSpotPrice - expectedPrice) / expectedPrice) * 100;
+            // Calculate price impact (including swap fee)
+            // Compare to expected 1:1 ratio like the bar charts do
+            const hoveredA = curves[hoveredCurve].A;
+            const feeDecimal = poolState.swapFee / 100; // Convert percentage to decimal
+            const hoverSpotPrice = calculateSpotPrice(
+              hoverPoint.x,
+              hoverPoint.y,
+              currentD,
+              hoveredA,
+              feeDecimal,
+            );
+            const expectedPrice = 1; // Expected 1:1 exchange rate for stablecoins
+            const priceImpact = ((hoverSpotPrice - expectedPrice) / expectedPrice) * 100;
 
-          // Position tooltip to the right by default, but flip left if too close to right edge
-          const tooltipX = pointX + 15 + tooltipWidth > width - padding
-            ? pointX - tooltipWidth - 15
-            : pointX + 15;
+            // Position tooltip to the right by default, but flip left if too close to right edge
+            const tooltipX =
+              pointX + 15 + tooltipWidth > width - padding
+                ? pointX - tooltipWidth - 15
+                : pointX + 15;
 
-          // Position tooltip above the point, but flip below if too close to top edge
-          const tooltipY = pointY - 75 < padding
-            ? pointY + 15
-            : pointY - 75;
+            // Position tooltip above the point, but flip below if too close to top edge
+            const tooltipY = pointY - 75 < padding ? pointY + 15 : pointY - 75;
 
-          const textX = tooltipX + 10;
-          const textYBase = tooltipY + 20;
+            const textX = tooltipX + 10;
+            const textYBase = tooltipY + 20;
 
-          return (
-            <>
-              {/* Hover point circle */}
-              <circle
-                cx={pointX}
-                cy={pointY}
-                r="5"
-                fill={curves[hoveredCurve].color}
-                stroke="#fff"
-                strokeWidth="2"
-              />
+            return (
+              <>
+                {/* Hover point circle */}
+                <circle
+                  cx={pointX}
+                  cy={pointY}
+                  r="5"
+                  fill={curves[hoveredCurve].color}
+                  stroke="#fff"
+                  strokeWidth="2"
+                />
 
-              {/* Tooltip background */}
-              <rect
-                x={tooltipX}
-                y={tooltipY}
-                width={tooltipWidth}
-                height={tooltipHeight}
-                fill="rgba(0, 0, 0, 0.85)"
-                stroke="#fff"
-                strokeWidth="1"
-                rx="4"
-              />
+                {/* Tooltip background */}
+                <rect
+                  x={tooltipX}
+                  y={tooltipY}
+                  width={tooltipWidth}
+                  height={tooltipHeight}
+                  fill="rgba(0, 0, 0, 0.85)"
+                  stroke="#fff"
+                  strokeWidth="1"
+                  rx="4"
+                />
 
-              {/* Tooltip text */}
-              <text
-                x={textX}
-                y={textYBase}
-                fill="#fff"
-                fontSize="12"
-                fontWeight="bold"
-              >
-                A = {curves[hoveredCurve].A}
-              </text>
-              <text
-                x={textX}
-                y={textYBase + 15}
-                fill="#fff"
-                fontSize="11"
-              >
-                Token A: {hoverPoint.x.toFixed(2)}
-              </text>
-              <text
-                x={textX}
-                y={textYBase + 30}
-                fill="#fff"
-                fontSize="11"
-              >
-                Token B: {hoverPoint.y.toFixed(2)}
-              </text>
-              <text
-                x={textX}
-                y={textYBase + 45}
-                fill={priceImpact >= 0 ? "#4ade80" : "#f87171"}
-                fontSize="11"
-                fontWeight="bold"
-              >
-                Impact: {priceImpact >= 0 ? '+' : ''}{priceImpact.toFixed(3)}%
-              </text>
-            </>
-          );
-        })()}
+                {/* Tooltip text */}
+                <text x={textX} y={textYBase} fill="#fff" fontSize="12" fontWeight="bold">
+                  A = {curves[hoveredCurve].A}
+                </text>
+                <text x={textX} y={textYBase + 15} fill="#fff" fontSize="11">
+                  Token A: {hoverPoint.x.toFixed(2)}
+                </text>
+                <text x={textX} y={textYBase + 30} fill="#fff" fontSize="11">
+                  Token B: {hoverPoint.y.toFixed(2)}
+                </text>
+                <text
+                  x={textX}
+                  y={textYBase + 45}
+                  fill={priceImpact >= 0 ? "#4ade80" : "#f87171"}
+                  fontSize="11"
+                  fontWeight="bold"
+                >
+                  Impact: {priceImpact >= 0 ? "+" : ""}
+                  {priceImpact.toFixed(3)}%
+                </text>
+              </>
+            );
+          })()}
       </svg>
 
       <div className="curve-legend">
         {curves.map((curve, idx) => (
           <div
             key={curve.A}
-            className={`legend-item legend-item-clickable ${!visibleCurves[idx] ? 'legend-item-disabled' : ''}`}
+            className={`legend-item legend-item-clickable ${!visibleCurves[idx] ? "legend-item-disabled" : ""}`}
             onClick={() => toggleCurve(idx)}
-            title={`Click to ${visibleCurves[idx] ? 'hide' : 'show'} curve`}
+            title={`Click to ${visibleCurves[idx] ? "hide" : "show"} curve`}
           >
             <span className="legend-line" style={{ backgroundColor: curve.color }}></span>
             <span>A = {curve.A}</span>

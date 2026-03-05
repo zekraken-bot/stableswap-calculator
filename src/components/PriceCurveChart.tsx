@@ -98,8 +98,8 @@ export const PriceCurveChart: React.FC<PriceCurveChartProps> = ({ poolState }) =
   const [hoveredCurve, setHoveredCurve] = useState<number | null>(null);
   const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number } | null>(null);
 
-  // Different A values to compare
-  const aValues = [50, 200, 500, 1000, 5000];
+  // Different A values to compare — span orders of magnitude to show curve shape differences
+  const aValues = [1, 10, 100, 1000, 10000];
   const colors = ["#dc3545", "#fd7e14", "#ffc107", "#28a745", "#007bff"];
 
   // Track which curves are visible (all visible by default)
